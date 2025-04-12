@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "darely_bot_backend": {
+      "candid": "src/darely_bot_backend/darely_bot_backend.did",
+      "package": "darely_bot_backend",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
