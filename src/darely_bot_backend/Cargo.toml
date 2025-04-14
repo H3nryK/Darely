@@ -12,3 +12,13 @@ crate-type = ["cdylib"]
 candid = "0.10"
 ic-cdk = "0.17"
 ic-cdk-timers = "0.11" # Feel free to remove this dependency if you don't need timers
+ic-stable-structures = "0.6.8"
+serde = { version = "1.0", features = ["derive"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = 'z' # Optimize  for size ('s' also possible)
+lto = true
+debug = false
+panic = 'abort'
+overflow-checks = true
