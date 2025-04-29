@@ -1,0 +1,21 @@
+{
+  "dfx": "0.26.0-beta.1",
+  "canisters": {
+    "Darely_Bot": {
+      "type": "rust",
+      "package": "Darely_Bot",
+      "candid": "can.did",
+      "gzip": true
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8080",
+      "type": "ephemeral",
+      "replica": {
+        "subnet_type": "system"
+      }
+    }
+  },
+  "version": 1
+}
