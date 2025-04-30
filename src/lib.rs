@@ -1,60 +1,52 @@
-use candid::CandidType;
+use candid::{CandidType, Principal};
 use ic_cdk::{init, post_upgrade, pre_upgrade, query, update};
 use ic_http_certification::{HttpRequest, HttpResponse};
-use ic_stable_structures::{
-    reader::{BufferedReader, Reader},
-    writer::{BufferedWriter, Writer},
-};
-use memory::get_upgrades_memory;
 use serde::{Deserialize, Serialize};
-use state::State;
+// Removed direct state import, use state module functions
+// use state::Config; // Config is accessed via state module functions now
 
+// Use state module directly
 pub mod memory;
 pub mod router;
 pub mod state;
 
-const READER_WRITER_BUFFER_SIZE: usize = 1024 * 1024; // 1MB
-
 #[init]
 fn init(args: InitOrUpgradeArgs) {
-    let state = State::new(args.oc_public_key);
-    state::init(state);
+    // Call the state initialization function
+    state::init(args.oc_public_key, args.initial_admins);
 }
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let mut memory = get_upgrades_memory();
-    let writer = BufferedWriter::new(READER_WRITER_BUFFER_SIZE, Writer::new(&mut memory, 0));
-    let mut serializer = rmp_serde::Serializer::new(writer).with_struct_map();
-
-    let state = state::take();
-    state.serialize(&mut serializer).unwrap()
+    // StableBTreeMaps persist automatically.
+    // Only non-stable data (if any) would need manual serialization.
+    // Config is in stable map, so likely nothing needed here.
+    ic_cdk::println!("Running pre_upgrade...");
 }
 
 #[post_upgrade]
 fn post_upgrade(args: InitOrUpgradeArgs) {
-    let memory = get_upgrades_memory();
-    let reader = BufferedReader::new(READER_WRITER_BUFFER_SIZE, Reader::new(&memory, 0));
-    let mut deserializer = rmp_serde::Deserializer::new(reader);
-
-    let mut state = State::deserialize(&mut deserializer).unwrap();
-
-    state.update(args.oc_public_key);
-
-    state::init(state);
+    // Call state re-initialization function
+    ic_cdk::println!("Running post_upgrade...");
+    state::post_upgrade_init(args.oc_public_key, args.initial_admins);
 }
 
 #[query]
 async fn http_request(request: HttpRequest) -> HttpResponse {
+    // Query calls are read-only, usually don't need caller check unless filtering results
     router::handle(request, true).await
 }
 
 #[update]
 async fn http_request_update(request: HttpRequest) -> HttpResponse {
+    // Update calls modify state, caller check often important in command logic
+    let caller = ic_cdk::caller();
+    ic_cdk::println!("http_request_update called by: {}", caller);
     router::handle(request, false).await
 }
 
 #[derive(CandidType, Serialize, Deserialize, Debug)]
 pub struct InitOrUpgradeArgs {
     pub oc_public_key: String,
+    pub initial_admins: Vec<Principal>, // Specify initial admins on deploy/upgrade
 }
